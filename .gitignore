@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Environment variable files
+.env
+.env.*
+
+# OS files
+.DS_Store
+
+# VSCode settings (optional, if not all collaborators use it)
+.vscode/
+
+# Docker
+*.log
+
+# Python egg info
+*.egg-info/
+dist/
+build/
+
+# PyInstaller
+*.spec
+
+# Unit test cache
+.pytest_cache/
+
+# SQLite (if used)
+*.sqlite3
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
