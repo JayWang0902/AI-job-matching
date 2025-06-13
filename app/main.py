@@ -1,11 +1,30 @@
 from fastapi import FastAPI
-from app.api import auth, resume, jd, match, recommend
+from fastapi.middleware.cors import CORSMiddleware
+from app.api import auth, resume
 
-app = FastAPI()
+app = FastAPI(
+    title="AI Job Matching API",
+    description="AI-powered job matching system with user authentication",
+    version="1.0.0"
+)
 
-# Include the routers from the different modules
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(resume.router, prefix="/resume", tags=["resume"])
-app.include_router(jd.router, prefix="/jd", tags=["job description"])
-app.include_router(match.router, prefix="/match", tags=["match"])
-app.include_router(recommend.router, prefix="/recommend", tags=["recommendation"])
+# 添加CORS中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 在生产环境中应该设置具体的域名
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 包含路由
+app.include_router(auth.router, tags=["authentication"])
+app.include_router(resume.router, tags=["resume"])
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to AI Job Matching API", "version": "1.0.0"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
