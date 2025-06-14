@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from app.api import auth, resume
 
 app = FastAPI(
@@ -18,7 +22,7 @@ app.add_middleware(
 )
 
 # 包含路由
-app.include_router(auth.router, tags=["authentication"])
+app.include_router(auth.router, tags=["auth"])
 app.include_router(resume.router, tags=["resume"])
 
 @app.get("/")
