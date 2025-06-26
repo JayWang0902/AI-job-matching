@@ -6,6 +6,7 @@ from app.services.s3_service import s3_service
 from typing import List, Optional
 import logging
 from datetime import datetime
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class ResumeService:
     @staticmethod
     def create_resume_upload_url(
         db: Session, 
-        user_id: int, 
+        user_id: UUID, 
         upload_request: ResumeUploadRequest
     ) -> ResumeUploadResponse:
         """创建简历上传URL"""
@@ -67,8 +68,8 @@ class ResumeService:
     @staticmethod
     def update_resume_status(
         db: Session, 
-        resume_id: int, 
-        user_id: int, 
+        resume_id: UUID, 
+        user_id: UUID, 
         status: str, 
         progress: float = None,
         error_message: str = None
@@ -106,7 +107,7 @@ class ResumeService:
         return resume
     
     @staticmethod
-    def get_user_resumes(db: Session, user_id: int, skip: int = 0, limit: int = 10) -> ResumeListResponse:
+    def get_user_resumes(db: Session, user_id: UUID, skip: int = 0, limit: int = 10) -> ResumeListResponse:
         """获取用户的简历列表"""
         resumes = db.query(Resume).filter(Resume.user_id == user_id)\
                    .order_by(Resume.created_at.desc())\
@@ -134,14 +135,14 @@ class ResumeService:
         )
     
     @staticmethod
-    def get_resume_by_id(db: Session, resume_id: int, user_id: int) -> Optional[Resume]:
+    def get_resume_by_id(db: Session, resume_id: UUID, user_id: UUID) -> Optional[Resume]:
         """根据ID获取简历"""
         return db.query(Resume).filter(
             and_(Resume.id == resume_id, Resume.user_id == user_id)
         ).first()
     
     @staticmethod
-    def delete_resume(db: Session, resume_id: int, user_id: int) -> bool:
+    def delete_resume(db: Session, resume_id: UUID, user_id: UUID) -> bool:
         """删除简历"""
         resume = db.query(Resume).filter(
             and_(Resume.id == resume_id, Resume.user_id == user_id)
@@ -165,7 +166,7 @@ class ResumeService:
             return False
     
     @staticmethod
-    def generate_download_url(db: Session, resume_id: int, user_id: int) -> Optional[str]:
+    def generate_download_url(db: Session, resume_id: UUID, user_id: UUID) -> Optional[str]:
         """生成下载URL"""
         resume = ResumeService.get_resume_by_id(db, resume_id, user_id)
         

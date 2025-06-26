@@ -10,6 +10,7 @@ from app.schemas.user import (
 from app.services.resume_service import ResumeService
 from typing import Optional
 import logging
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/resume", tags=["resume"])
@@ -61,7 +62,7 @@ async def create_upload_url(
 
 @router.put("/{resume_id}/status")
 async def update_resume_status(
-    resume_id: int,
+    resume_id: UUID,
     status: str = Query(..., description="状态：uploaded, processing, parsed, failed"),
     progress: Optional[float] = Query(None, description="上传进度 0.0-1.0"),
     error_message: Optional[str] = Query(None, description="错误信息"),
@@ -133,7 +134,7 @@ async def get_resumes(
 
 @router.get("/{resume_id}", response_model=ResumeMetadata)
 async def get_resume_detail(
-    resume_id: int,
+    resume_id: UUID,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -171,7 +172,7 @@ async def get_resume_detail(
 
 @router.get("/{resume_id}/download")
 async def get_download_url(
-    resume_id: int,
+    resume_id: UUID,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -200,7 +201,7 @@ async def get_download_url(
 
 @router.delete("/{resume_id}")
 async def delete_resume(
-    resume_id: int,
+    resume_id: UUID,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):

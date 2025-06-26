@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
 # 用户注册请求模型
 class UserCreate(BaseModel):
@@ -15,7 +16,7 @@ class UserLogin(BaseModel):
 
 # 用户响应模型
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     username: str
     email: str
     is_active: bool
@@ -41,14 +42,14 @@ class ResumeUploadRequest(BaseModel):
     file_size: Optional[int] = None
 
 class ResumeUploadResponse(BaseModel):
-    resume_id: int
+    resume_id: UUID
     upload_url: str
     upload_fields: dict
     expires_in: int = 3600  # 1小时过期
 
 class ResumeMetadata(BaseModel):
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     filename: str
     original_filename: str
     file_size: Optional[int]
@@ -64,7 +65,7 @@ class ResumeMetadata(BaseModel):
         from_attributes = True
 
 class ResumeResponse(BaseModel):
-    id: int
+    id: UUID
     filename: str
     original_filename: str
     file_size: Optional[int]
@@ -78,4 +79,4 @@ class ResumeResponse(BaseModel):
 class ResumeListResponse(BaseModel):
     resumes: list[ResumeResponse]
     total: int
-    user_id: int
+    user_id: UUID
