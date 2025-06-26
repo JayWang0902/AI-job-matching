@@ -26,40 +26,41 @@ class ResumeService:
                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
             if upload_request.content_type not in allowed_types:
                 raise ValueError("仅支持PDF和Word文档格式")
-            
-            # 生成S3键
-            s3_key = s3_service.generate_s3_key(user_id, upload_request.filename)
-            
+
+            # 在数据库中创建简历记录
+            resume = Resume(
+                user_id=user_id,
+                original_filename=upload_request.filename,
+                file_size=upload_request.file_size,
+                content_type=upload_request.content_type,
+                status='pending'
+            )
+
+            db.add(resume)
+            db.commit()
+            db.refresh(resume)
+
+            # 使用数据库生成的UUID创建S3键
+            s3_key = s3_service.generate_s3_key(user_id, str(resume.id))
+            resume.s3_key = s3_key
+            resume.filename = s3_key.split('/')[-1]  # 存储的文件名
+            resume.s3_bucket = s3_service.s3_bucket
+            db.commit()
+
             # 生成预签名上传URL
             upload_info = s3_service.generate_presigned_upload_url(
                 s3_key=s3_key,
                 content_type=upload_request.content_type,
                 expires_in=3600
             )
-            
-            # 在数据库中创建简历记录
-            resume = Resume(
-                user_id=user_id,
-                filename=s3_key.split('/')[-1],  # 存储的文件名
-                original_filename=upload_request.filename,
-                file_size=upload_request.file_size,
-                content_type=upload_request.content_type,
-                s3_key=s3_key,
-                s3_bucket=s3_service.s3_bucket,
-                status='pending'
-            )
-            
-            db.add(resume)
-            db.commit()
-            db.refresh(resume)
-            
+
             return ResumeUploadResponse(
                 resume_id=resume.id,
                 upload_url=upload_info['upload_url'],
                 upload_fields=upload_info['upload_fields'],
                 expires_in=upload_info['expires_in']
             )
-            
+
         except Exception as e:
             db.rollback()
             logger.error(f"创建上传URL失败: {e}")

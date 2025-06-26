@@ -60,11 +60,9 @@ class S3Service:
             logger.error(f"Error generating presigned URL: {e}")
             raise Exception(f"无法生成上传URL: {str(e)}")
     
-    def generate_s3_key(self, user_id: int, original_filename: str) -> str:
+    def generate_s3_key(self, user_id: int, resume_uuid: str) -> str:
         """生成S3对象键"""
-        file_ext = original_filename.split('.')[-1] if '.' in original_filename else 'pdf'
-        unique_id = str(uuid.uuid4())
-        return f"resumes/user_{user_id}/{unique_id}.{file_ext}"
+        return f"resumes/{user_id}/{resume_uuid}"
     
     def check_file_exists(self, s3_key: str) -> bool:
         """检查文件是否存在"""
