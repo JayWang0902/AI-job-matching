@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, DateTime, Boolean, Float, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -39,7 +39,14 @@ class Resume(Base):
     # 创建时间和更新时间
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    summary = Column(Text, nullable=True)  # GPT 生成的简历摘要（自然语言）
+    skills = Column(ARRAY(String), nullable=True)  # 提取出的技能标签，比如 ["Python", "LLM", "Django"]
+    job_titles = Column(ARRAY(String), nullable=True)  # 提取出的职位目标或经验相关的职位 ["AI Engineer", "Data Analyst"]
+
+    embedding = Column(ARRAY(Float), nullable=True)  # OpenAI 或 BGE 模型生成的向量（维度如1536或384）
+
+    # 是否成功生成 summary、embedding（便于异步状态判断）
+    parsed_at = Column(DateTime, nullable=True)  # 语义信息生成的时间戳
     # 关联到用户
     user = relationship("User", back_populates="resumes")
     

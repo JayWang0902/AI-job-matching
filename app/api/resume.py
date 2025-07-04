@@ -8,6 +8,7 @@ from app.schemas.user import (
     ResumeListResponse, ResumeMetadata
 )
 from app.services.resume_service import ResumeService
+from app.services.resume_processing_service import resume_processing_service
 from typing import Optional
 import logging
 from uuid import UUID
@@ -100,6 +101,18 @@ async def update_resume_status(
         if not resume:
             raise HTTPException(status_code=404, detail="简历不存在")
         
+        # If status is 'uploaded', trigger the synchronous processing
+        if status == 'uploaded':
+            try:
+                resume_processing_service.process_resume(db=db, resume_id=resume_id)
+                # We need to refresh the resume object to get the latest status
+                db.refresh(resume)
+            except Exception as e:
+                logger.error(f"同步处理简历失败: {e}")
+                # The service itself handles setting the status to 'failed'
+                # but we raise an HTTP exception to inform the client.
+                raise HTTPException(status_code=500, detail=f"简历处理失败: {e}")
+
         return {
             "message": "状态更新成功",
             "resume_id": resume_id,
