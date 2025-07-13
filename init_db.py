@@ -33,6 +33,7 @@ def create_tables(engine):
     """创建数据表"""
     try:
         from app.models.user import Base
+        from app.models import user, job
         Base.metadata.create_all(bind=engine)
         print("✅ 数据表创建成功")
         return True
