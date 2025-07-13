@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from pgvector.sqlalchemy import Vector
 from .base import Base
 from sqlalchemy.orm import relationship
 from datetime import datetime

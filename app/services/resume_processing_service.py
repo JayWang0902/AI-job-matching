@@ -171,7 +171,16 @@ class ResumeProcessingService:
             resume.job_titles = job_titles
 
             # 5. Generate embedding
-            embedding = cls._get_embedding(parsed_content)
+
+            # 构造用于Embedding的增强内容(augumented content)
+            embedding_content = (
+                f"Potential Job Titles: {', '.join(job_titles or [])}\n"
+                f"Skills: {', '.join(skills or [])}\n"
+                f"Professional Summary: {summary}\n\n"
+                f"Full Resume Content:\n{parsed_content}"
+            )
+
+            embedding = cls._get_embedding(embedding_content)
             resume.embedding = embedding
 
             # 6. Final update to 'parsed'

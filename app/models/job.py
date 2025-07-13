@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, UniqueConstraint
-from sqlalchemy.dialects.postgresql import ARRAY, UUID, FLOAT, JSONB
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean, UniqueConstraint
+from sqlalchemy.dialects.postgresql import ARRAY, UUID, JSONB
+from pgvector.sqlalchemy import Vector
 from .base import Base
 from datetime import datetime
 import uuid
@@ -40,7 +41,7 @@ class Job(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # 用于AI匹配的字段 (预留)
-    embedding = Column(ARRAY(FLOAT), nullable=True) # JD内容的向量表示
+    embedding = Column(ARRAY(Float), nullable=True) # JD内容的向量表示
 
     __table_args__ = (
         # 创建一个复合唯一约束，确保同一个来源的同一个职位ID只被记录一次
