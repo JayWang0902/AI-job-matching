@@ -7,6 +7,7 @@ from typing import List, Optional
 import logging
 from datetime import datetime
 from uuid import UUID
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -27,25 +28,25 @@ class ResumeService:
             if upload_request.content_type not in allowed_types:
                 raise ValueError("仅支持PDF和Word文档格式")
 
+            # 手动生成UUID作为简历ID和文件名，并用与生成S3 Key
+            resume_id = uuid.uuid4()
+            s3_key = s3_service.generate_s3_key(user_id, str(resume_id))
+
             # 在数据库中创建简历记录
             resume = Resume(
+                id=resume_id,
                 user_id=user_id,
                 original_filename=upload_request.filename,
                 file_size=upload_request.file_size,
                 content_type=upload_request.content_type,
+                s3_key=s3_key,
+                s3_bucket=s3_service.s3_bucket,
                 status='pending'
             )
 
             db.add(resume)
             db.commit()
             db.refresh(resume)
-
-            # 使用数据库生成的UUID创建S3键
-            s3_key = s3_service.generate_s3_key(user_id, str(resume.id))
-            resume.s3_key = s3_key
-            resume.filename = s3_key.split('/')[-1]  # 存储的文件名
-            resume.s3_bucket = s3_service.s3_bucket
-            db.commit()
 
             # 生成预签名上传URL
             upload_info = s3_service.generate_presigned_upload_url(

@@ -96,7 +96,7 @@ def create_user(db: Session, username: str, email: str, password: str) -> User:
     # 创建新用户
     hashed_password = get_password_hash(password)
     db_user = User(
-        id=UUID(),
+        # id自动生成
         username=username,
         email=email,
         hashed_password=hashed_password,

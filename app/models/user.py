@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, Float, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -26,7 +26,7 @@ class Resume(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
-    filename = Column(String(255), nullable=False)  # 存储在S3的文件名
+    # filename = Column(String(255), nullable=False)  # 存储在S3的文件名
     original_filename = Column(String(255), nullable=False) # 用户上传的原始文件名
     file_size = Column(Integer, nullable=True) # 文件大小，单位为字节
     content_type = Column(String(100), nullable=False, default='application/pdf')

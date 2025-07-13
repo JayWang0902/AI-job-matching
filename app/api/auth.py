@@ -12,6 +12,11 @@ from app.services.auth_service import (
     create_access_token,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
+import logging
+import traceback
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -19,16 +24,24 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """用户注册"""
     try:
+        logger.info(f"开始注册用户: {user_data.username}, {user_data.email}")
+        logger.debug(f"用户数据: username={user_data.username}, email={user_data.email}")
         user = create_user(
             db=db,
             username=user_data.username,
             email=user_data.email,
             password=user_data.password
         )
+
+        logger.info(f"用户注册成功: {user.username}, ID: {user.id}")
         return user
     except HTTPException:
+        logger.error(f"HTTP异常: {he.detail}")
         raise
     except Exception as e:
+        logger.error(f"注册失败，详细错误: {str(e)}")
+        logger.error(f"错误类型: {type(e).__name__}")
+        logger.error(f"完整堆栈跟踪: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Registration failed"
