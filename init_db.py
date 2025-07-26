@@ -9,6 +9,12 @@ load_dotenv()
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+"""
+初始化数据库脚本
+只能用于初次设置数据库或在开发环境中使用。
+更改表结构需先删除表再重新创建。
+"""
+
 def test_connection():
     """测试数据库连接"""
     try:
@@ -32,8 +38,8 @@ def test_connection():
 def create_tables(engine):
     """创建数据表"""
     try:
-        from app.models.user import Base
-        from app.models import user, job
+        from app.models.base import Base
+        from app.models import user, job, job_match
         Base.metadata.create_all(bind=engine)
         print("✅ 数据表创建成功")
         return True

@@ -4,22 +4,16 @@ from typing import Optional, Tuple, List, Dict
 import boto3
 import docx
 import fitz  # PyMuPDF
-import openai
 from sqlalchemy.orm import Session
 from app.models.user import Resume
 from app.services.s3_service import s3_service
+from app.services.openai_service import get_openai_client
 from uuid import UUID
 from datetime import datetime
 import json
+import openai
 
 logger = logging.getLogger(__name__)
-
-# It's recommended to manage the OpenAI client in a more centralized way if used elsewhere
-# For this example, we initialize it here.
-# Ensure OPENAI_API_KEY is set in your environment variables.
-openai.api_key = os.getenv("OPENAI_API_KEY")
-if not openai.api_key:
-    logger.warning("OPENAI_API_KEY environment variable not set. OpenAI API calls will fail.")
 
 class ResumeProcessingService:
     """
@@ -79,8 +73,7 @@ class ResumeProcessingService:
         """
         Uses OpenAI to generate a summary, list of skills, and potential job titles.
         """
-        if not openai.api_key:
-            raise ValueError("OpenAI API key is not configured.")
+        client = get_openai_client()
 
         prompt = f'''
         Analyze the following resume content and extract the information in JSON format.
@@ -96,7 +89,7 @@ class ResumeProcessingService:
         '''
         try:
             logger.info("Calling OpenAI ChatCompletion API...")
-            response = openai.chat.completions.create(
+            response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are an expert HR assistant specializing in resume analysis."},
@@ -122,12 +115,11 @@ class ResumeProcessingService:
     @staticmethod
     def _get_embedding(content: str) -> Optional[List[float]]:
         """Generates a vector embedding for the resume content."""
-        if not openai.api_key:
-            raise ValueError("OpenAI API key is not configured.")
+        client = get_openai_client()
             
         try:
             logger.info("Calling OpenAI Embedding API...")
-            response = openai.embeddings.create(
+            response = client.embeddings.create(
                 model="text-embedding-3-small",
                 input=content[:8191] # Respect token limits
             )

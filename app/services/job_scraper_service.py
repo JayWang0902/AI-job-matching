@@ -19,7 +19,7 @@ class JobScraperService:
     ]
 
     @classmethod
-    def run_all_scrapers(cls, db: Session):
+    def run_all_scrapers(cls, db: Session, limit_per_source: int = None):
         """
         Iterates through all registered scrapers, fetches data, saves new
         job postings, and generates embeddings for them.
@@ -35,8 +35,16 @@ class JobScraperService:
                 if not normalized_jobs:
                     logger.info(f"No jobs found from {source_name}.")
                     continue
+                
+                # 根据 limit_per_source 参数决定要处理的JD数量
+                if limit_per_source is not None and limit_per_source > 0:
+                    jobs_to_check = normalized_jobs[:limit_per_source]
+                    logger.info(f"Applying limit: checking the first {len(jobs_to_check)} of {len(normalized_jobs)} jobs found from {source_name}.")
+                else:
+                    jobs_to_check = normalized_jobs
+                    logger.info(f"Checking all {len(normalized_jobs)} jobs found from {source_name}.")
 
-                for job_data in normalized_jobs[:5]:
+                for job_data in jobs_to_check:
                     # Check if the job already exists to avoid duplicates
                     exists = db.query(Job).filter_by(
                         source=source_name,

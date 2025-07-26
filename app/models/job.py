@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean, 
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, JSONB
 from pgvector.sqlalchemy import Vector
 from .base import Base
+from sqlalchemy.orm import relationship
+from pgvector.sqlalchemy import Vector
 from datetime import datetime
 import uuid
 
@@ -36,12 +38,14 @@ class Job(Base):
     additional_data = Column(JSONB, nullable=True)
     
     # 时间戳
-    posted_at = Column(DateTime, nullable=False) # JD发布时间
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    posted_at = Column(DateTime(timezone=True), nullable=False) # JD发布时间
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # 用于AI匹配的字段 (预留)
-    embedding = Column(ARRAY(Float), nullable=True) # JD内容的向量表示
+    embedding = Column(Vector(1536), nullable=True) # JD内容的向量表示
+
+    matches = relationship("JobMatch", back_populates="job", cascade="all, delete-orphan")
 
     __table_args__ = (
         # 创建一个复合唯一约束，确保同一个来源的同一个职位ID只被记录一次

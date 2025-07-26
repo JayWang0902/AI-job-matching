@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.api import auth, resume
+from app.api import auth, resume, matches
+from app.tasks import run_daily_flow
 
 app = FastAPI(
     title="AI Job Matching API",
@@ -24,6 +25,7 @@ app.add_middleware(
 # 包含路由
 app.include_router(auth.router, tags=["auth"])
 app.include_router(resume.router, tags=["resume"])
+app.include_router(matches.router, tags=["matches"])
 
 @app.get("/")
 async def root():
@@ -32,3 +34,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.post("/debug/trigger-daily-flow", tags=["debug"])
+async def trigger_daily_flow_endpoint():
+    """
+    Manually trigger the daily job scraping and matching flow.
+    NOTE: This endpoint should be disabled or protected in production.
+    """
+    run_daily_flow.delay()
+    return {"message": "Daily job flow has been triggered successfully. Check Celery logs for progress."}

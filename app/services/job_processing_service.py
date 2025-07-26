@@ -1,8 +1,8 @@
 import os
 from uuid import UUID
 from sqlalchemy.orm import Session
-from openai import OpenAI
 from app.models.job import Job
+from app.services.openai_service import get_openai_client
 
 class JobProcessingService:
     """
@@ -14,7 +14,7 @@ class JobProcessingService:
         """
         Generates an embedding for the given text using OpenAI's API.
         """
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client = get_openai_client()
         text = text.replace("\n", " ")
         response = client.embeddings.create(input=[text], model=model)
         return response.data[0].embedding

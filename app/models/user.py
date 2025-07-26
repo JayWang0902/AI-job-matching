@@ -14,8 +14,10 @@ class User(Base):
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    last_active_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    last_active_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    
+    matches = relationship("JobMatch", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username}, email={self.email})>"
@@ -36,21 +38,22 @@ class Resume(Base):
     error_message = Column(Text, nullable=True) # 错误信息，如果有的话
     parsed_content = Column(Text, nullable=True) # 解析后的内容，如果有的话
     # 创建时间和更新时间
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
     summary = Column(Text, nullable=True)  # GPT 生成的简历摘要（自然语言）
     skills = Column(ARRAY(String), nullable=True)  # 提取出的技能标签，比如 ["Python", "LLM", "Django"]
     job_titles = Column(ARRAY(String), nullable=True)  # 提取出的职位目标或经验相关的职位 ["AI Engineer", "Data Analyst"]
 
-    embedding = Column(ARRAY(Float), nullable=True)  # OpenAI 或 BGE 模型生成的向量（维度如1536或384）
+    embedding = Column(Vector(1536), nullable=True)  # OpenAI 或 BGE 模型生成的向量（维度如1536或384）
 
     # 是否成功生成 summary、embedding（便于异步状态判断）
-    parsed_at = Column(DateTime, nullable=True)  # 语义信息生成的时间戳
+    parsed_at = Column(DateTime(timezone=True), nullable=True)  # 语义信息生成的时间戳
     # 关联到用户
     user = relationship("User", back_populates="resumes")
+    matches = relationship("JobMatch", back_populates="resume", cascade="all, delete-orphan")
     
     def __repr__(self):
-        return f"<Resume(id={self.id}, user_id={self.user_id}, filename={self.filename}, status={self.status})>"
+        return f"<Resume(id={self.id}, user_id={self.user_id}, filename={self.original_filename}, status={self.status})>"
 
 # 在User模型中添加与Resume的关系
 User.resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
