@@ -9,6 +9,7 @@ import openai
 from sqlalchemy import func
 from pgvector.sqlalchemy import Vector as PgVector
 from datetime import datetime, timedelta, timezone
+from app.prompts import MATCH_ANALYSIS_PROMPT 
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,24 @@ class JobMatchingService:
         # 2. 在jobs表中进行向量相似度搜索
         # 使用 L2 距离作为例子，cosine 距离 (cosine_distance) 通常更适合文本向量
         now_utc = datetime.now(timezone.utc) # 获取今天的日期
-        start_datetime = now_utc - timedelta(days=days-1) # 计算起始日期
+        start_datetime = now_utc - timedelta(days=days) # 计算起始日期，days默认为1天
+        
+        # -- 新增诊断日志 --
+        # 检查在指定时间范围内，有多少岗位以及多少岗位有向量
+        total_jobs_in_range = db.query(Job).filter(Job.created_at >= start_datetime).count()
+        jobs_with_embedding_in_range = db.query(Job).filter(
+            Job.created_at >= start_datetime,
+            Job.embedding.isnot(None)
+        ).count()
+        
+        jobs_missing_embedding = total_jobs_in_range - jobs_with_embedding_in_range
+
+        logger.info(f"诊断信息：在过去 {days} 天内，总共找到 {total_jobs_in_range} 个岗位。其中 {jobs_with_embedding_in_range} 个有向量。")
+
+        if jobs_missing_embedding > 0:
+            logger.warning(f"发现 {jobs_missing_embedding} 个岗位在时间范围内缺失向量，这可能影响匹配结果的完整性。")
+        # -- 诊断日志结束 --
+        
         similar_jobs = db.query(
             Job,
             Job.embedding.cosine_distance(latest_resume.embedding).label('distance')
@@ -74,7 +92,7 @@ class JobMatchingService:
                     user_id=user.id,
                     resume_id=latest_resume.id,
                     job_id=job.id,
-                    similarity_score=1 - distance,  # 将距离转换为相似度 (1-L2距离)
+                    similarity_score=1 - distance,  # 将距离转换为相似度 (1-cos距离)
                     analysis=analysis
                 )
                 db.add(new_match)
@@ -92,18 +110,10 @@ class JobMatchingService:
         """
         使用OpenAI生成简历与岗位JD的匹配分析
         """
-        prompt = f"""
-        请根据以下简历内容和职位描述，分析这位候选人为什么适合这个职位。
-        你的分析应该简明扼要，控制在2-3句话，重点突出候选人的关键技能和经验与职位要求的契合点。
-
-        --- 简历核心内容 ---
-        {resume_content[:4000]}
-
-        --- 职位描述 ---
-        {job_description[:4000]}
-
-        --- 分析结果 (2-3句话) ---
-        """
+        prompt = MATCH_ANALYSIS_PROMPT.format(
+            resume_content=resume_content[:4000],
+            job_description=job_description[:4000]
+        )
         try:
             client = get_openai_client()
             response = client.chat.completions.create(
