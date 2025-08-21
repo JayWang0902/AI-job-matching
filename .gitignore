@@ -40,3 +40,6 @@ build/
 htmlcov/
 .coverage
 coverage.xml
+
+# scripts
+scripts/
