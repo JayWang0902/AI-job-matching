@@ -14,8 +14,8 @@ class JobScraperService:
     
     # A list of all scraper instances to be run.
     SCRAPERS = [
-        RemoteOkScraper()
-        # ArbeitnowScraper(),
+        RemoteOkScraper(),
+        ArbeitnowScraper()
     ]
 
     @classmethod
