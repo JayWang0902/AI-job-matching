@@ -79,10 +79,6 @@ const ResumePage = () => {
       content_type: selectedFile.type,
     });
 
-    // —— 充分打印，终端/控制台都清楚 —— //
-    console.log('[presign] status:', resp.status);
-    console.log('[presign] headers:', resp.headers);
-    console.log('[presign] raw data:', resp.data);
     try {
       console.log('[presign] pretty:\n', JSON.stringify(resp.data, null, 2));
       if (resp.data?.upload_fields) console.table(resp.data.upload_fields);
@@ -94,7 +90,7 @@ const ResumePage = () => {
       throw new Error('预签名响应缺少 upload_url 或 upload_fields');
     }
 
-    // 2) 组装和 Postman 一样的 multipart/form-data
+    // 2) 组装 multipart/form-data
     const formData = new FormData();
 
     // 必须先把后端给的所有字段原样 append（key/policy/x-amz-*/Content-Type/x-amz-meta-*…）
@@ -114,7 +110,7 @@ const ResumePage = () => {
       throw new Error(`S3 POST failed: ${s3Resp.status}`);
     }
 
-    // 4) 通知后端
+    // 4) 通知后端上传完成，更新状态为 uploaded
     await api.put(`/api/resume/${resume_id}/status?status=uploaded`);
 
     setResumeStatus('Processing');
