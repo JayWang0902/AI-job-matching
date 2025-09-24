@@ -23,9 +23,9 @@ app.add_middleware(
 )
 
 # 包含路由
-app.include_router(auth.router, tags=["auth"])
-app.include_router(resume.router, tags=["resume"])
-app.include_router(matches.router, tags=["matches"])
+app.include_router(auth.router, prefix="/api", tags=["auth"])
+app.include_router(resume.router, prefix="/api", tags=["resume"])
+app.include_router(matches.router, prefix="/api", tags=["matches"])
 
 @app.get("/")
 async def root():
