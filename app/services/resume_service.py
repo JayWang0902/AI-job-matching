@@ -172,8 +172,8 @@ class ResumeService:
         """生成下载URL"""
         resume = ResumeService.get_resume_by_id(db, resume_id, user_id)
         
-        if not resume or resume.status != 'uploaded':
-            return None
+        # if not resume or resume.status != 'uploaded':
+        #     return None
         
         try:
             return s3_service.generate_download_url(resume.s3_key)
