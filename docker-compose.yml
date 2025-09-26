@@ -1,15 +1,15 @@
 # version: "3.9"
 
 services:
-  redis:
-    image: "redis:7-alpine"
-    container_name: ai-job-matching-redis
-    # 将Redis端口映射到EC2主机上，方便调试，但生产环境要注意安全组设置
-    ports:
-      - "6379:6379"
-    # 如果需要数据持久化，可以取消下面的注释
-    # volumes:
-    #   - redis_data:/data
+  # redis:
+  #   image: "redis:7-alpine"
+  #   container_name: ai-job-matching-redis
+  #   # 将Redis端口映射到EC2主机上，方便调试，但生产环境要注意安全组设置
+  #   ports:
+  #     - "6379:6379"
+  #   # 如果需要数据持久化，可以取消下面的注释
+  #   # volumes:
+  #   #   - redis_data:/data
     
   backend:
     build:
@@ -61,7 +61,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: ai-job-matching-frontend
     environment:
       - NODE_ENV=development
