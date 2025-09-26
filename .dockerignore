@@ -1,4 +1,5 @@
-# Python
+.git
+.gitignore
 __pycache__/
 *.py[cod]
 *.log
@@ -9,23 +10,20 @@ __pycache__/
 venv/
 .ai-job-matching/
 
-# Node / Frontend
 node_modules/
 frontend/node_modules/
 frontend/.next/
 dist/
 build/
 
-# Local data / DB
-*.sqlite
-*.sqlite3
+*.sqlite*
 *.db
 data/
 
-# Secrets / configs
 *.pem
 *.key
 *.crt
 *.env
 .env.*
+
 .DS_Store
