@@ -2,25 +2,22 @@ name: Deploy to EC2 on push to main
 
 on:
   push:
-    branches: [ "main" ]   # 只有推送到 main 才触发部署
+    branches: [ "main" ]
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # 运行环境：GitHub 托管的 Ubuntu 虚拟机
+    runs-on: ubuntu-latest
 
     steps:
-      # 1) 加载你的 SSH 私钥到 agent，后续才能 ssh 登陆 EC2
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      # 2) 把 EC2 主机的指纹加入 known_hosts，避免首次连接交互卡住
       - name: Add EC2 to known_hosts
         run: |
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      # 3) 真正的远程部署：ssh 进入 EC2，cd 到项目目录，git 拉代码，docker compose 重启
       - name: SSH and deploy
         env:
           HOST: ${{ secrets.EC2_HOST }}
@@ -28,32 +25,40 @@ jobs:
           PROJECT_DIR: ${{ secrets.EC2_PROJECT_DIR }}
           HEALTH_URL: ${{ secrets.HEALTH_URL }}
         run: |
-          # 说明：下面是 Heredoc，多行命令会在 EC2 上执行
-          ssh ${USER}@${HOST} <<EOF
-          set -e  # 任一命令失败就退出（保证失败时 workflow 也报错）
+          ssh "${USER}@${HOST}" <<EOF
+          set -e
 
           echo "==> cd 到项目目录"
-          cd ${PROJECT_DIR}
+          cd "${PROJECT_DIR}"
 
           echo "==> 拉最新代码（以 main 为例）"
           git fetch --all --prune
-          git reset --hard origin/main  # 等价“对齐远端最新 main”，比 git pull 更干净
+          git reset --hard origin/main
 
           echo "==> 停旧容器（忽略报错）"
-          docker compose down || true   
+          docker compose down || true
 
           echo "==> 构建并启动（-d 后台；--build 每次重新构建镜像）"
-          docker compose up -d --build  
+          docker compose up -d --build
 
           echo "==> 健康检查（最多重试 10 次，每次间隔 3s）"
+          ok=0
           for i in {1..10}; do
-            curl -fsS ${HEALTH_URL} && echo "health ok" && exit 0
-            echo "health not ready, retry \$i..."
-            sleep 3
+            if curl -fsS "${HEALTH_URL}" > /dev/null; then
+              echo "health ok"
+              ok=1
+              break
+            else
+              echo "health not ready, retry \$i..."
+              sleep 3
+            fi
           done
 
-          echo "健康检查失败，打印最近日志方便排错："
-          docker compose ps
-          docker compose logs --tail=100
-          exit 1
+          if [ "\$ok" -ne 1 ]; then
+            echo "健康检查失败，打印最近日志方便排错："
+            docker compose ps || true
+            docker compose logs --tail=100 || true
+            exit 1
+          fi
           EOF
+
