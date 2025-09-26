@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
    * This prevents Next.js from getting confused by the lockfile in the parent directory.
   */
   outputFileTracingRoot: __dirname,
+  output: 'standalone',
 };
 
 export default nextConfig;

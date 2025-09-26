@@ -1,4 +1,4 @@
-version: "3.9"
+# version: "3.9"
 
 services:
   redis:
@@ -57,6 +57,27 @@ services:
       - LOG_LEVEL=INFO
     depends_on:
       - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ai-job-matching-frontend
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_BASE_URL=http://backend:8000
+      # Docker 某些环境下需要轮询才能触发热更新，可按需打开：
+      # - WATCHPACK_POLLING=true
+      # - CHOKIDAR_USEPOLLING=1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      # 把你的本地前端代码挂进容器，实现热更新
+      - ./frontend:/app
+      # 让 node_modules 使用容器里的，不被上面这一行覆盖
+      - /app/node_modules
 
 # 生产环境建议使用云服务（如AWS RDS/ElastiCache），不在compose中启动db/redis
 # 只需确保 .env 中的 DATABASE_URL 和 REDIS_URL 指向你的云服务地址
