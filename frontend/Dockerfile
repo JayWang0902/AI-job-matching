@@ -32,4 +32,5 @@ COPY --from=build /app/.next ./.next
 
 RUN npm ci --omit=dev       # 只装生产依赖
 EXPOSE 3000
-CMD ["npm","run","start"]   # 运行生产服务器
+# 运行生产服务器
+CMD ["npm","run","start"]

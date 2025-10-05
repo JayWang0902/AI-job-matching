@@ -90,6 +90,7 @@ def trigger_matching_for_all_users(_):
         logger.info(f"Found {len(user_id_strs)} active users. Creating parallel matching tasks.")
         
         # Create a group of tasks to run in parallel
+        # This will allow us to match jobs for all active users concurrently
         matching_tasks = group(match_jobs_for_user.s(user_id_str) for user_id_str in user_id_strs)
         matching_tasks.apply_async()
         

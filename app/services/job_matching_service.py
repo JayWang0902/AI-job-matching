@@ -137,7 +137,8 @@ class JobMatchingService:
     @classmethod
     def run_matching_for_all_users(cls, db: Session):
         """
-        为所有活跃用户执行岗位匹配流程
+        dddddd
+        为所有活跃用户执行岗位匹配流程(目前应该没有调用这个方法，在tasks.py里用celery并行跑)
         """
         logger.info("开始为所有活跃用户执行每日岗位匹配...")
         active_users = db.query(User).filter(User.is_active == True).all()
