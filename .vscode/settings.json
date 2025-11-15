@@ -1,0 +1,13 @@
+{
+  "terminal.integrated.profiles.osx": {
+    "project_venv": {
+      "path": "zsh",
+      "args": [
+        "-c",
+        "source ai-job-matching/bin/activate; exec zsh"
+      ]
+    }
+  },
+  "terminal.integrated.defaultProfile.osx": "project_venv",
+  "typescript.updateImportsOnFileMove.enabled": "always"
+}

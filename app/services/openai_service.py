@@ -1,7 +1,7 @@
 import openai
-import os
 import logging
 from functools import lru_cache
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -9,13 +9,13 @@ logger = logging.getLogger(__name__)
 def get_openai_client() -> openai.OpenAI:
     """
     Initializes and returns the OpenAI client.
-    It uses the OPENAI_API_KEY from the environment variables.
+    It uses the OPENAI_API_KEY from the unified config.
     The client is cached to avoid re-initialization on every call.
     """
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = settings.OPENAI_API_KEY
     if not api_key:
-        logger.error("OPENAI_API_KEY environment variable not set.")
-        raise ValueError("OPENAI_API_KEY environment variable not set.")
+        logger.error("OPENAI_API_KEY not set in configuration.")
+        raise ValueError("OPENAI_API_KEY not set in configuration.")
     
     try:
         client = openai.OpenAI(api_key=api_key)

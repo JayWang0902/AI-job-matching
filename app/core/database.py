@@ -1,16 +1,13 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
+from app.core.config import settings
 
-load_dotenv()
-
-# Database URL - 配置为PostgreSQL连接字符串
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+# Database URL - 从统一配置读取
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 if not SQLALCHEMY_DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
+    raise ValueError("DATABASE_URL is not set in configuration")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

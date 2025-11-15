@@ -1,10 +1,9 @@
-import os
 import boto3
-import uuid
 from typing import Dict, Optional
 from botocore.client import Config
 from botocore.exceptions import ClientError
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -12,10 +11,10 @@ class S3Service:
     """S3文件存储服务"""
     
     def __init__(self):
-        self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-        self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-        self.aws_region = os.getenv('AWS_REGION', 'us-east-1')
-        self.s3_bucket = os.getenv('S3_BUCKET_NAME', 'ai-job-matching-resumes')
+        self.aws_access_key_id = settings.AWS_ACCESS_KEY_ID
+        self.aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY
+        self.aws_region = settings.AWS_REGION
+        self.s3_bucket = settings.S3_BUCKET_NAME
         
         # 初始化S3客户端
         self.s3_client = boto3.client(

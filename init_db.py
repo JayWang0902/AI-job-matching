@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-from dotenv import load_dotenv
-
-# 加载环境变量
-load_dotenv()
 
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -19,8 +15,9 @@ def test_connection():
     """测试数据库连接"""
     try:
         from sqlalchemy import create_engine, text
+        from app.core.config import settings
         
-        DATABASE_URL = os.getenv("DATABASE_URL")
+        DATABASE_URL = settings.DATABASE_URL
         print(f"尝试连接: {DATABASE_URL}")
         
         engine = create_engine(DATABASE_URL)
