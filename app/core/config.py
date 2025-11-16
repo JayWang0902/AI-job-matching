@@ -65,8 +65,8 @@ class Settings(BaseSettings):
     # ==================== OpenAI API Configuration ====================
     OPENAI_API_KEY: str = Field(
         ...,
-        pattern=r"^sk-.*",
-        description="OpenAI API key, must start with 'sk-'"
+        min_length=1,
+        description="OpenAI API key (should start with 'sk-' in production)"
     )
     
     # ==================== Application Configuration ====================
