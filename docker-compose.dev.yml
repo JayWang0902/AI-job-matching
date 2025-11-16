@@ -1,0 +1,71 @@
+# Docker Compose for Local Development with Hot Reload
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-job-matching-backend:dev
+    env_file:
+      - .env.local
+    volumes:
+      # Mount source code for hot reload (changes reflect immediately)
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    environment:
+      - ENV=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    # --reload enables auto-restart on code changes
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+    ports:
+      - "8000:8000"
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    image: ai-job-matching-celery:dev
+    env_file:
+      - .env.local
+    volumes:
+      # Mount source code for celery hot reload
+      - ./app:/app/app
+    environment:
+      - ENV=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    # Basic celery worker (manual restart needed for code changes)
+    command: celery -A app.celery_app.celery_app worker --loglevel=debug
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      # Mount source for Next.js Fast Refresh
+      - ./frontend:/app
+      - /app/node_modules  # 保留容器中的 node_modules
+      - /app/.next  # 保留容器中的 .next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
+
+  # Optional: Add a postgres container for local testing
+  # postgres:
+  #   image: pgvector/pgvector:pg16
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: ai_job_matching_dev
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+# volumes:
+#   postgres_data:
