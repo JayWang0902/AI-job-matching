@@ -119,7 +119,15 @@ jobs:
           set -e
           
           echo "==> Navigating to project directory"
+          mkdir -p "${PROJECT_DIR}"
           cd "${PROJECT_DIR}"
+          
+          # Initialize git repo if not exists
+          if [ ! -d .git ]; then
+            echo "==> Initializing git repository"
+            git init
+            git remote add origin https://github.com/${{ github.repository }}.git
+          fi
           
           echo "==> Pulling latest code"
           git fetch --all --prune
