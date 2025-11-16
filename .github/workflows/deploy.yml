@@ -287,14 +287,24 @@ jobs:
           HEALTH_URL: ${{ secrets.HEALTH_URL }}
         run: |
           echo "==> Final health check from GitHub Actions"
+          
+          # Skip if HEALTH_URL not configured
+          if [ -z "${HEALTH_URL}" ]; then
+            echo "⚠️  HEALTH_URL not configured, skipping external health check"
+            echo "💡 To enable: Add HEALTH_URL secret with value: http://YOUR_EC2_IP:8000/health"
+            exit 0
+          fi
+          
           for i in {1..5}; do
-            if curl -fsS "${HEALTH_URL}" > /dev/null; then
-              echo "✓ Deployment verified - service is healthy"
+            if curl -fsS "${HEALTH_URL}" > /dev/null 2>&1; then
+              echo "✓ Deployment verified - service is healthy from external network"
               exit 0
             else
               echo "⏳ Waiting for service to be reachable, attempt $i..."
               sleep 5
             fi
           done
-          echo "⚠️  Service not reachable from external network, but deployment completed"
+          
+          echo "⚠️  Service not reachable from external network, but deployment completed on EC2"
+          echo "💡 This is often normal - check security groups allow 0.0.0.0/0 on port 8000"
 
