@@ -45,6 +45,9 @@ COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser alembic ./alembic
 COPY --chown=appuser:appuser alembic.ini ./alembic.ini
 
+# Ensure alembic versions directory exists and is writable
+RUN mkdir -p alembic/versions && chown -R appuser:appuser alembic/versions
+
 # Switch to non-root user
 USER appuser
 
