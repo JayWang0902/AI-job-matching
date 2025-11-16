@@ -39,8 +39,10 @@ COPY --from=builder /install /usr/local
 
 WORKDIR /app
 
-# Copy application code
+# Copy application code and alembic files
 COPY --chown=appuser:appuser app ./app
+COPY --chown=appuser:appuser alembic ./alembic
+COPY --chown=appuser:appuser alembic.ini ./alembic.ini
 
 # Switch to non-root user
 USER appuser
