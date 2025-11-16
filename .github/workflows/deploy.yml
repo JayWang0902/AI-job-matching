@@ -138,7 +138,11 @@ jobs:
     name: Deploy to EC2
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Deploy on push to main, or when manually triggered
+    # Skip deploy if no code changes (only docs/workflow changes)
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Setup SSH agent
@@ -156,6 +160,9 @@ jobs:
           USER: ${{ secrets.EC2_USER }}
           PROJECT_DIR: ${{ secrets.EC2_PROJECT_DIR }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+          BACKEND_CHANGED: ${{ needs.build-and-push.outputs.backend-changed }}
+          CELERY_CHANGED: ${{ needs.build-and-push.outputs.celery-changed }}
+          FRONTEND_CHANGED: ${{ needs.build-and-push.outputs.frontend-changed }}
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -163,10 +170,20 @@ jobs:
           # Set default project directory if not provided
           PROJECT_DIR="${PROJECT_DIR:-/home/ubuntu/AI-job-matching}"
           
+          # Determine which image tag to use
+          # If no services changed, use 'latest' instead of commit SHA
+          if [[ "${BACKEND_CHANGED}" != "true" && "${CELERY_CHANGED}" != "true" && "${FRONTEND_CHANGED}" != "true" ]]; then
+            echo "⚠️ No service images were built, using 'latest' tag"
+            DEPLOY_TAG="latest"
+          else
+            echo "✓ New images built with tag: ${IMAGE_TAG}"
+            DEPLOY_TAG="${IMAGE_TAG}"
+          fi
+          
           # Deploy via SSH - pass all variables as environment
           ssh "${USER}@${HOST}" \
             PROJECT_DIR="${PROJECT_DIR}" \
-            IMAGE_TAG="${IMAGE_TAG}" \
+            IMAGE_TAG="${DEPLOY_TAG}" \
             REGISTRY="${REGISTRY}" \
             IMAGE_PREFIX="${IMAGE_PREFIX}" \
             GITHUB_TOKEN="${GITHUB_TOKEN}" \
