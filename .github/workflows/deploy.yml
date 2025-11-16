@@ -170,20 +170,38 @@ jobs:
           # Set default project directory if not provided
           PROJECT_DIR="${PROJECT_DIR:-/home/ubuntu/AI-job-matching}"
           
-          # Determine which image tag to use
-          # If no services changed, use 'latest' instead of commit SHA
-          if [[ "${BACKEND_CHANGED}" != "true" && "${CELERY_CHANGED}" != "true" && "${FRONTEND_CHANGED}" != "true" ]]; then
-            echo "⚠️ No service images were built, using 'latest' tag"
-            DEPLOY_TAG="latest"
+          # Determine which image tag to use for each service
+          # Use commit SHA for built services, 'latest' for unchanged services
+          if [[ "${BACKEND_CHANGED}" == "true" ]]; then
+            BACKEND_TAG="${IMAGE_TAG}"
+            echo "✓ Backend built with tag: ${BACKEND_TAG}"
           else
-            echo "✓ New images built with tag: ${IMAGE_TAG}"
-            DEPLOY_TAG="${IMAGE_TAG}"
+            BACKEND_TAG="latest"
+            echo "⚠️ Backend not built, using latest"
+          fi
+          
+          if [[ "${CELERY_CHANGED}" == "true" ]]; then
+            CELERY_TAG="${IMAGE_TAG}"
+            echo "✓ Celery built with tag: ${CELERY_TAG}"
+          else
+            CELERY_TAG="latest"
+            echo "⚠️ Celery not built, using latest"
+          fi
+          
+          if [[ "${FRONTEND_CHANGED}" == "true" ]]; then
+            FRONTEND_TAG="${IMAGE_TAG}"
+            echo "✓ Frontend built with tag: ${FRONTEND_TAG}"
+          else
+            FRONTEND_TAG="latest"
+            echo "⚠️ Frontend not built, using latest"
           fi
           
           # Deploy via SSH - pass all variables as environment
           ssh "${USER}@${HOST}" \
             PROJECT_DIR="${PROJECT_DIR}" \
-            IMAGE_TAG="${DEPLOY_TAG}" \
+            BACKEND_TAG="${BACKEND_TAG}" \
+            CELERY_TAG="${CELERY_TAG}" \
+            FRONTEND_TAG="${FRONTEND_TAG}" \
             REGISTRY="${REGISTRY}" \
             IMAGE_PREFIX="${IMAGE_PREFIX}" \
             GITHUB_TOKEN="${GITHUB_TOKEN}" \
@@ -210,10 +228,20 @@ jobs:
           echo "==> Logging into GitHub Container Registry"
           echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
           
-          echo "==> Setting image tag: ${IMAGE_TAG}"
-          export IMAGE_TAG="${IMAGE_TAG}"
-          export DOCKER_REGISTRY="${REGISTRY}"
-          export DOCKER_IMAGE_PREFIX="${IMAGE_PREFIX}"
+          echo "==> Pulling images with appropriate tags"
+          echo "  Backend: ${BACKEND_TAG}"
+          echo "  Celery: ${CELERY_TAG}"
+          echo "  Frontend: ${FRONTEND_TAG}"
+          
+          # Create docker-compose override with specific tags using printf
+          printf 'version: "3.9"\nservices:\n  backend:\n    image: %s/%s-backend:%s\n  celery:\n    image: %s/%s-celery:%s\n  frontend:\n    image: %s/%s-frontend:%s\n' \
+            "${REGISTRY}" "${IMAGE_PREFIX}" "${BACKEND_TAG}" \
+            "${REGISTRY}" "${IMAGE_PREFIX}" "${CELERY_TAG}" \
+            "${REGISTRY}" "${IMAGE_PREFIX}" "${FRONTEND_TAG}" \
+            > docker-compose.override.yml
+          
+          echo "==> Generated docker-compose.override.yml:"
+          cat docker-compose.override.yml
           
           echo "==> Pulling latest images"
           docker compose pull
