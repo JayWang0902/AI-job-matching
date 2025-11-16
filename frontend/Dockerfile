@@ -1,36 +1,48 @@
-# FROM node:22-alpine
-# WORKDIR /app
 
-# # 先装依赖（利用缓存）
-# COPY package*.json ./
-# RUN npm install
-
-# # 把源码复制进容器（第一次构建要有，不然 npm run dev 找不到文件）
-# COPY . .
-
-# EXPOSE 3000
-# CMD ["npm", "run", "dev"]
-
-
-# ---------- 构建阶段 ----------
-FROM node:22-alpine AS build
+# ========== Stage 1: Dependencies ==========
+FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci                  # 更稳定的安装方式
-COPY . .
-RUN npm run build           # 先构建出 .next 等产物
 
-# ---------- 运行阶段 ----------
+# Install dependencies based on the preferred package manager
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+# ========== Stage 2: Builder ==========
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# ========== Stage 3: Runner ==========
 FROM node:22-alpine AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
 
-COPY --from=build /app/next.config.* ./
-COPY --from=build /app/package*.json ./
-COPY --from=build /app/public ./public
-COPY --from=build /app/.next ./.next
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-RUN npm ci --omit=dev       # 只装生产依赖
+# Copy necessary files from builder
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Set proper ownership
+RUN chown -R nextjs:nodejs /app
+
+# Switch to non-root user
+USER nextjs
+
 EXPOSE 3000
-# 运行生产服务器
-CMD ["npm","run","start"]
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Run the application
+CMD ["node", "server.js"]

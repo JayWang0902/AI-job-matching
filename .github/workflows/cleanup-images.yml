@@ -1,0 +1,37 @@
+name: Cleanup Old Container Images
+
+on:
+  # Run weekly on Sunday at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * 0'
+  # Allow manual trigger
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  cleanup:
+    name: Delete Old Images
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    
+    strategy:
+      matrix:
+        service: [backend, celery, frontend]
+    
+    steps:
+      - name: Delete old images for ${{ matrix.service }}
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'ai-job-matching-${{ matrix.service }}'
+          package-type: 'container'
+          min-versions-to-keep: 5  # Keep last 5 versions
+          delete-only-untagged-versions: false
+          
+      - name: Summary
+        run: |
+          echo "✅ Cleaned up old versions of ${{ matrix.service }}"
+          echo "📦 Kept the last 5 versions"

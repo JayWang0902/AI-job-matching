@@ -1,32 +1,56 @@
-# Use an official Python runtime as a parent image
+# ========== Stage 1: Builder ==========
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libffi-dev \
+    libssl-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Install Python dependencies to /install directory
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ========== Stage 2: Runtime ==========
 FROM python:3.11-slim
 
-# 安装系统依赖（为 cryptography, psycopg2, lxml 等提供支持）
-# RUN apt-get update && apt-get install -y \ 
-#     build-essential \
-#     gcc \
-#     libffi-dev \
-#     libssl-dev \
-#     libpq-dev \
-#     libxml2-dev \
-#     libxslt1-dev \
-#     curl \
-#     && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Set the working directory in the container
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
+
 WORKDIR /app
 
-# Copy the requirements file first to leverage Docker cache
-COPY requirements.txt ./
+# Copy application code
+COPY --chown=appuser:appuser app ./app
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Switch to non-root user
+USER appuser
 
-# Copy the current directory contents into the container
-COPY app ./app
-
-# Expose the port the app runs on
 EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the server
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

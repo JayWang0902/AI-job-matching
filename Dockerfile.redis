@@ -1,0 +1,13 @@
+# 自定义 Redis Dockerfile
+# 如果需要自定义配置，可以使用这个
+
+FROM redis:7.2-alpine
+
+# 复制自定义配置文件
+COPY redis.conf /usr/local/etc/redis/redis.conf
+
+# 暴露端口
+EXPOSE 6379
+
+# 启动 Redis，使用自定义配置
+CMD ["redis-server", "/usr/local/etc/redis/redis.conf", "--requirepass", "${REDIS_PASSWORD}"]

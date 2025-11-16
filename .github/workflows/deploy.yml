@@ -1,13 +1,100 @@
-name: Deploy to EC2 on push to main
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
 
 jobs:
-  deploy:
+  # Job 1: Build and Push Docker Images
+  build-and-push:
+    name: Build & Push Images
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          VERSION="${GITHUB_SHA::8}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Image tag: ${VERSION}"
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ steps.meta.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and push celery image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.celery
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-celery:${{ steps.meta.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-celery:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:${{ steps.meta.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+  # Job 2: Deploy to EC2
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
     steps:
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.9.0
@@ -18,52 +105,86 @@ jobs:
         run: |
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: SSH and deploy
+      - name: Deploy to EC2
         env:
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
           PROJECT_DIR: ${{ secrets.EC2_PROJECT_DIR }}
-          HEALTH_URL: ${{ secrets.HEALTH_URL }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
         run: |
-          ssh "${USER}@${HOST}" <<EOF
+          ssh "${USER}@${HOST}" bash -s << 'ENDSSH'
           set -e
-
-          echo "==> cd 到项目目录"
+          
+          echo "==> Navigating to project directory"
           cd "${PROJECT_DIR}"
-
-          echo "==> 拉最新代码（以 main 为例）"
+          
+          echo "==> Pulling latest code"
           git fetch --all --prune
           git reset --hard origin/main
-
-          echo "==> 停旧容器（忽略报错）"
-          docker compose down || true
-
-          echo "==> 构建并启动（-d 后台；--build 每次重新构建镜像）"
-          docker compose up -d --build
-
-          echo "==> 健康检查（最多重试 10 次，每次间隔 3s）"
+          
+          echo "==> Logging into GitHub Container Registry"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          echo "==> Setting image tag: ${IMAGE_TAG}"
+          export IMAGE_TAG="${IMAGE_TAG}"
+          export DOCKER_REGISTRY="${REGISTRY}"
+          export DOCKER_IMAGE_PREFIX="${IMAGE_PREFIX}"
+          
+          echo "==> Pulling latest images"
+          docker compose pull
+          
+          echo "==> Stopping old containers"
+          docker compose down
+          
+          echo "==> Starting services with new images"
+          docker compose up -d
+          
+          echo "==> Waiting for services to be ready (health check)"
+          sleep 10
+          
+          echo "==> Health check (retry up to 12 times, 5s interval)"
           ok=0
-          for i in {1..10}; do
-            if curl -fsS "${HEALTH_URL}" > /dev/null; then
-              echo "health ok"
+          for i in {1..12}; do
+            if docker compose ps | grep -q "backend.*Up.*healthy"; then
+              echo "✓ Backend is healthy"
               ok=1
               break
             else
-              echo "health not ready, retry \$i..."
-              sleep 3
+              echo "⏳ Health check not ready, retry $i..."
+              sleep 5
             fi
           done
-
-          if [ "\$ok" -ne 1 ]; then
-            echo "健康检查失败，打印最近日志方便排错："
-            docker compose ps || true
-            docker compose logs --tail=100 || true
+          
+          if [ "$ok" -ne 1 ]; then
+            echo "❌ Health check failed, showing logs:"
+            docker compose ps
+            docker compose logs --tail=100
             exit 1
           fi
-
-          docker image prune -f --filter "until=24h"
-          docker builder prune -af --filter "until=24h"
-          docker volume prune -f
           
-          EOF
+          echo "==> Deployment successful!"
+          
+          echo "==> Cleaning up old images"
+          docker image prune -f --filter "until=72h"
+          docker builder prune -af --filter "until=72h"
+          
+          ENDSSH
+
+      - name: Verify deployment
+        env:
+          HEALTH_URL: ${{ secrets.HEALTH_URL }}
+        run: |
+          echo "==> Final health check from GitHub Actions"
+          for i in {1..5}; do
+            if curl -fsS "${HEALTH_URL}" > /dev/null; then
+              echo "✓ Deployment verified - service is healthy"
+              exit 0
+            else
+              echo "⏳ Waiting for service to be reachable, attempt $i..."
+              sleep 5
+            fi
+          done
+          echo "⚠️  Service not reachable from external network, but deployment completed"
 

@@ -27,5 +27,5 @@ data/
 *.key
 *.crt
 *.env
-.env.*
+# .env.*
 .DS_Store

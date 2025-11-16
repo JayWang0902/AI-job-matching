@@ -1,23 +1,49 @@
+# ========== Stage 1: Builder ==========
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libffi-dev \
+    libssl-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Install Python dependencies to /install directory
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ========== Stage 2: Runtime ==========
 FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
 
 WORKDIR /app
 
-COPY requirements.txt ./
+# Copy application code
+COPY --chown=appuser:appuser app ./app
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Switch to non-root user
+USER appuser
 
-COPY app ./app
-
-# RUN apt-get update && apt-get install -y \
-#     build-essential \
-#     gcc \
-#     libffi-dev \
-#     libssl-dev \
-#     libpq-dev \
-#     libxml2-dev \
-#     libxslt1-dev \
-#     curl \
-#     && rm -rf /var/lib/apt/lists/*
-
-
+# Run Celery worker
 CMD ["celery", "-A", "app.celery_app.celery_app", "worker", "--loglevel=info"]

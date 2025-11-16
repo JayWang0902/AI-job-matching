@@ -1,83 +1,98 @@
-# version: "3.9"
+version: "3.9"
 
 services:
-  # redis:
-  #   image: "redis:7-alpine"
-  #   container_name: ai-job-matching-redis
-  #   # 将Redis端口映射到EC2主机上，方便调试，但生产环境要注意安全组设置
-  #   ports:
-  #     - "6379:6379"
-  #   # 如果需要数据持久化，可以取消下面的注释
-  #   # volumes:
-  #   #   - redis_data:/data
-    
+  redis:
+    image: redis:7.2-alpine
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - app-network
+
   backend:
+    # For local development: build from Dockerfile
+    # For production: use pre-built image from registry
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE_PREFIX:-jaywang0902/ai-job-matching}-backend:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ai-job-matching-backend
     env_file:
       - .env
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - DEBUG=False
-      - LOG_LEVEL=INFO
+      - DEBUG=${DEBUG:-False}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
-      - "8000:8000"
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+      - "${BACKEND_PORT:-8000}:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
 
   celery:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE_PREFIX:-jaywang0902/ai-job-matching}-celery:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.celery
-    container_name: ai-job-matching-celery
     env_file:
       - .env
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - DEBUG=False
-      - LOG_LEVEL=INFO
+      - DEBUG=${DEBUG:-False}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    restart: unless-stopped
     depends_on:
-      - backend
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
 
   frontend:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE_PREFIX:-jaywang0902/ai-job-matching}-frontend:${IMAGE_TAG:-latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: ai-job-matching-frontend
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_BASE_URL=http://backend:8000
-      # Docker 某些环境下需要轮询才能触发热更新，可按需打开：
-      # - WATCHPACK_POLLING=true
-      # - CHOKIDAR_USEPOLLING=1
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
+    restart: unless-stopped
     depends_on:
-      - backend
-    # volumes:
-    #   # 把你的本地前端代码挂进容器，实现热更新
-    #   - ./frontend:/app
-    #   # 让 node_modules 使用容器里的，不被上面这一行覆盖
-    #   - /app/node_modules
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
 
-# 生产环境建议使用云服务（如AWS RDS/ElastiCache），不在compose中启动db/redis
-# 只需确保 .env 中的 DATABASE_URL 和 REDIS_URL 指向你的云服务地址
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
+
+# Note: This setup includes Redis in Docker for cost savings.
+# For high-availability production, consider managed services like AWS ElastiCache.
+# DATABASE_URL can point to AWS RDS or a local PostgreSQL container.
