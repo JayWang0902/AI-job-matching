@@ -8,7 +8,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository }}
+  # Convert repository name to lowercase for ghcr.io
+  IMAGE_PREFIX: jaywang0902/ai-job-matching
 
 jobs:
   # Job 1: Build and Push Docker Images
