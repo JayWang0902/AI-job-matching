@@ -13,6 +13,7 @@
 ## 📖 详细指南
 
 ### 部署相关
+- [docs/EC2_FIRST_DEPLOYMENT.md](docs/EC2_FIRST_DEPLOYMENT.md) - ⭐ **EC2 首次部署快速指南**（推荐先读）
 - [EC2_DEPLOYMENT_CHECKLIST.md](EC2_DEPLOYMENT_CHECKLIST.md) - EC2 部署完整检查清单
 - [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) - 详细部署指南
 - [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - 从旧架构迁移指南

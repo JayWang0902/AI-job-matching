@@ -5,7 +5,7 @@ import boto3
 import docx
 import fitz  # PyMuPDF
 from sqlalchemy.orm import Session
-from app.models.user import Resume
+from app.models.resume import Resume
 from app.services.s3_service import s3_service
 from app.services.openai_service import get_openai_client
 from uuid import UUID

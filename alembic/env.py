@@ -13,6 +13,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 # Import your models base to get metadata
 from app.models.base import Base
 
+# Import all models so Alembic can detect them for autogenerate
+from app.models.user import User  # noqa: F401
+from app.models.resume import Resume  # noqa: F401
+from app.models.job import Job  # noqa: F401
+from app.models.job_match import JobMatch  # noqa: F401
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

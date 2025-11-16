@@ -1,6 +1,7 @@
 import logging
 from sqlalchemy.orm import Session
-from app.models.user import User, Resume
+from app.models.user import User
+from app.models.resume import Resume
 from app.models.job import Job
 from app.models.job_match import JobMatch
 from app.services.openai_service import get_openai_client

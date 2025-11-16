@@ -7,7 +7,7 @@ from app.tasks import run_daily_flow
 app = FastAPI(
     title="AI Job Matching API",
     description="AI-powered job matching system with user authentication",
-    version="1.0.0"
+    version="1.0.1"  # Updated for CI/CD testing
 )
 
 # 添加CORS中间件

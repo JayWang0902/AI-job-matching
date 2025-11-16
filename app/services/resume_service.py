@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from app.models.user import Resume, User
+from app.models.user import User
+from app.models.resume import Resume
 from app.schemas.user import ResumeUploadRequest, ResumeUploadResponse, ResumeResponse, ResumeListResponse
 from app.services.s3_service import s3_service
 from typing import List, Optional
