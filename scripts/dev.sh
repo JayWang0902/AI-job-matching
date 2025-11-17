@@ -31,12 +31,35 @@ case $ACTION in
         echo "   - Frontend will use Next.js Fast Refresh"
         echo "   - Celery will auto-restart on changes"
         echo ""
-        docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+        echo "💡 Tip: Images are cached. First run builds, subsequent runs start fast."
+        echo "   To force rebuild: ./scripts/dev.sh build"
+        echo ""
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml up
         ;;
     
     down)
         echo "🛑 Stopping development environment..."
         docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+        echo "✅ All containers stopped and removed"
+        ;;
+    
+    stop)
+        echo "⏸️  Stopping containers (keeping them for quick restart)..."
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml stop
+        echo "✅ Containers stopped (use './scripts/dev.sh up' to resume)"
+        ;;
+    
+    clean)
+        echo "🧹 Cleaning up dangling images and stopped containers..."
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+        echo "  Removing dangling images (tagged as <none>)..."
+        docker image prune -f
+        echo "  Removing unused build cache..."
+        docker builder prune -f
+        echo "✅ Cleanup complete!"
+        echo ""
+        echo "💾 Disk space saved:"
+        docker system df
         ;;
     
     restart)
@@ -65,15 +88,23 @@ case $ACTION in
         ;;
     
     *)
-        echo "Usage: ./scripts/dev.sh [up|down|restart|logs|build|shell]"
+        echo "Usage: ./scripts/dev.sh [command] [options]"
         echo ""
         echo "Commands:"
         echo "  up       - Start development environment (default)"
-        echo "  down     - Stop development environment"
+        echo "  down     - Stop and remove containers"
+        echo "  stop     - Stop containers without removing (faster restart)"
         echo "  restart  - Restart all services"
+        echo "  build    - Rebuild containers (only when dependencies change)"
+        echo "  clean    - Clean up dangling images and cache"
         echo "  logs     - View logs (add service name for specific service)"
-        echo "  build    - Rebuild containers"
         echo "  shell    - Open shell in container (default: backend)"
+        echo ""
+        echo "Examples:"
+        echo "  ./scripts/dev.sh              # Start dev environment"
+        echo "  ./scripts/dev.sh logs backend # View backend logs"
+        echo "  ./scripts/dev.sh clean        # Free up disk space"
+        echo "  ./scripts/dev.sh down         # Stop and cleanup"
         exit 1
         ;;
 esac

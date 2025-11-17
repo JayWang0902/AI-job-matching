@@ -72,22 +72,26 @@ const MatchesPage = () => {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gray-100 text-black">
-      <nav className="bg-white shadow-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      {/* Navigation */}
+      <nav className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <button
+            <div className="flex items-center gap-4">
+              <button 
                 onClick={() => router.push("/dashboard")}
-                className="text-blue-500 hover:underline"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors group"
               >
-                &larr; Back to Dashboard
+                <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Dashboard
               </button>
             </div>
             <div className="flex items-center">
               <button
                 onClick={logout}
-                className="bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600"
+                className="bg-gradient-to-r from-red-500 to-pink-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:from-red-600 hover:to-pink-700 transform hover:scale-105 transition-all shadow-md"
               >
                 Logout
               </button>
@@ -96,52 +100,114 @@ const MatchesPage = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-6">My Job Matches</h1>
+      <main className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-3xl">🎯</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">My Job Matches</h1>
+              <p className="text-gray-600">AI-powered recommendations just for you</p>
+            </div>
+          </div>
+        </div>
 
-          {loading ? (
-            <p>Loading matches...</p>
-          ) : matches.length > 0 ? (
-            <div className="space-y-6">
-              {matches.map((m) => {
-                const title =
-                  m.job?.title ?? m.job?.job_title ?? "Untitled job";
-                const company =
-                  m.job?.company_name ?? m.job?.company ?? "Unknown company";
-                const analysis =
-                  m.analysis ?? "No analysis available yet.";
-                const score = Number.isFinite(m.similarity_score)
-                  ? `${(m.similarity_score * 100).toFixed(1)}% match`
-                  : "";
-                const created = m.created_at
-                  ? new Date(m.created_at).toLocaleString()
-                  : "";
+        {loading ? (
+          <div className="bg-white p-12 rounded-2xl shadow-lg border border-gray-100">
+            <div className="flex flex-col items-center justify-center">
+              <div className="animate-spin w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
+              <p className="text-gray-600 text-lg">Loading your matches...</p>
+            </div>
+          </div>
+        ) : matches.length > 0 ? (
+          <div className="space-y-6">
+            {matches.map((m) => {
+              const title = m.job?.title ?? m.job?.job_title ?? "Untitled job";
+              const company = m.job?.company_name ?? m.job?.company ?? "Unknown company";
+              const analysis = m.analysis ?? "No analysis available yet.";
+              const score = Number.isFinite(m.similarity_score)
+                ? (m.similarity_score * 100).toFixed(1)
+                : null;
+              const created = m.created_at
+                ? new Date(m.created_at).toLocaleDateString()
+                : "";
 
-                return (
-                  <div key={m.id} className="border p-4 rounded-lg">
-                    <h2 className="text-xl font-semibold">{title}</h2>
-                    <p className="text-gray-600 mb-1">{company}</p>
-                    <p className="text-sm text-gray-500 mb-2">
-                      {score}
-                      {score && created ? " • " : ""}
-                      {created}
-                    </p>
-                    <div className="prose max-w-none">
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {analysis}
-                      </p>
+              return (
+                <div 
+                  key={m.id} 
+                  className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all"
+                >
+                  {/* Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
+                      <div className="flex items-center gap-3 text-gray-600">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          {company}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Match Score Badge */}
+                    {score && (
+                      <div className="flex flex-col items-end gap-2">
+                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-lg shadow-md ${
+                          parseFloat(score) >= 80 ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white' :
+                          parseFloat(score) >= 60 ? 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white' :
+                          'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                        }`}>
+                          <span>{score}%</span>
+                          <span className="text-sm font-normal">match</span>
+                        </div>
+                        {created && (
+                          <span className="text-xs text-gray-500">{created}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Analysis */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="text-lg">🤖</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-800 mb-2">AI Analysis</h3>
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {analysis}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white p-12 rounded-2xl shadow-lg border border-gray-100">
+            <div className="text-center">
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-5xl">🔍</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                No matches yet
+              </h2>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Your job matches are being generated. Our AI is analyzing your profile to find the perfect opportunities. Check back soon!
+              </p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm">
+                <div className="animate-pulse w-2 h-2 bg-blue-500 rounded-full"></div>
+                Processing in background
+              </div>
             </div>
-          ) : (
-            <p>
-              Your job matches are being generated. Please check back later.
-            </p>
-          )}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );

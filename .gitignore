@@ -27,5 +27,9 @@ data/
 *.key
 *.crt
 *.env
-# .env.*
+.env.local
+.env.*.local
 .DS_Store
+
+# Docker local overrides (generated)
+docker-compose.override.yml

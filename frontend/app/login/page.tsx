@@ -25,43 +25,75 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="username">Username</label>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+        {/* Logo/Icon */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mb-4 shadow-lg">
+            <span className="text-3xl">💼</span>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Welcome Back
+          </h1>
+          <p className="text-gray-500 mt-2">Sign in to find your dream job</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-gray-700 font-medium mb-2" htmlFor="username">
+              Username
+            </label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-black"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="Enter your username"
               required
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 mb-2" htmlFor="password">Password</label>
+          
+          <div>
+            <label className="block text-gray-700 font-medium mb-2" htmlFor="password">
+              Password
+            </label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-black"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="Enter your password"
               required
             />
           </div>
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-          <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
-            Login
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-indigo-700 transform hover:scale-[1.02] transition-all shadow-lg hover:shadow-xl"
+          >
+            Sign In
           </button>
         </form>
-        <p className="text-center mt-4">
-          Don't have an account?{' '}
-          <a onClick={() => router.push('/register')} className="text-blue-500 hover:underline cursor-pointer">
-            Register
-          </a>
-        </p>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-600">
+            Don't have an account?{' '}
+            <a 
+              onClick={() => router.push('/register')} 
+              className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline"
+            >
+              Create Account
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

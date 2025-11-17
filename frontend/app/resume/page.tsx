@@ -165,19 +165,26 @@ const ResumePage = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-100 text-black">
-      <nav className="bg-white shadow-md">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      {/* Navigation */}
+      <nav className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <button onClick={() => router.push('/dashboard')} className="text-blue-500 hover:underline">
-                &larr; Back to Dashboard
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => router.push('/dashboard')} 
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors group"
+              >
+                <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Dashboard
               </button>
             </div>
             <div className="flex items-center">
               <button
                 onClick={logout}
-                className="bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600"
+                className="bg-gradient-to-r from-red-500 to-pink-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:from-red-600 hover:to-pink-700 transform hover:scale-105 transition-all shadow-md"
               >
                 Logout
               </button>
@@ -186,53 +193,161 @@ const ResumePage = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-6">My Resume</h1>
+      <main className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-3xl">📄</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">My Resume</h1>
+              <p className="text-gray-600">Manage your professional profile</p>
+            </div>
+          </div>
+        </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold">Current Status</h2>
-            <p className="text-gray-700">{resumeStatus || 'Loading...'}</p>
+        <div className="space-y-6">
+          {/* Current Resume Status Card */}
+          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <span className="text-xl">📊</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Current Status</h2>
+            </div>
 
             {latestResume ? (
-              <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600">Latest:</span>
-                  <span className="font-medium truncate max-w-xs">{latestResume.original_filename}</span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700 border">
-                    {latestResume.status}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm font-medium text-gray-500">Latest Resume:</span>
+                      <span className="font-semibold text-gray-800 truncate max-w-md">
+                        {latestResume.original_filename}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        latestResume.status === 'parsed' ? 'bg-green-100 text-green-700' :
+                        latestResume.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                        latestResume.status === 'uploaded' ? 'bg-blue-100 text-blue-700' :
+                        latestResume.status === 'failed' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {latestResume.status === 'parsed' ? '✓ ' : ''}
+                        {latestResume.status.charAt(0).toUpperCase() + latestResume.status.slice(1)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(latestResume.uploaded_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
                   <button
                     onClick={() => handleDownload(latestResume.id)}
-                    className="text-blue-600 hover:underline"
+                    className="ml-4 flex items-center gap-2 bg-white text-green-600 px-4 py-2 rounded-xl font-medium hover:bg-green-50 border border-green-200 transition-all shadow-sm hover:shadow"
                   >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                     Download
                   </button>
                 </div>
+                
+                {latestResume.status === 'processing' && (
+                  <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    <span className="text-sm text-blue-700">Your resume is being processed by AI...</span>
+                  </div>
+                )}
               </div>
             ) : (
-              <p className="mt-2 text-gray-500">No resume uploaded.</p>
+              <div className="text-center py-8">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl opacity-50">📄</span>
+                </div>
+                <p className="text-gray-500 text-lg">No resume uploaded yet</p>
+                <p className="text-gray-400 text-sm mt-1">Upload your resume below to get started</p>
+              </div>
             )}
           </div>
 
-          <div>
-            <h2 className="text-xl font-semibold mb-2">Upload New Resume</h2>
-            <input
-              type="file"
-              onChange={handleFileChange}
-              className="mb-4 block"
-              accept=".pdf,.doc,.docx"
-            />
-            <button
-              onClick={handleUpload}
-              disabled={!selectedFile || uploading}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
-            >
-              {uploading ? 'Uploading...' : 'Upload'}
-            </button>
-            {error && <p className="text-red-500 mt-4">{error}</p>}
+          {/* Upload New Resume Card */}
+          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                <span className="text-xl">📤</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Upload New Resume</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-green-400 transition-colors">
+                <label htmlFor="file-upload" className="cursor-pointer block">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <span className="text-3xl">📎</span>
+                    </div>
+                    <p className="text-gray-700 font-medium mb-1">
+                      {selectedFile ? selectedFile.name : 'Click to select a file or drag and drop'}
+                    </p>
+                    <p className="text-sm text-gray-500">PDF, DOC, or DOCX (Max 10MB)</p>
+                  </div>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx"
+                  />
+                </label>
+              </div>
+
+              {selectedFile && (
+                <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
+                  <span className="text-2xl">✓</span>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800">{selectedFile.name}</p>
+                    <p className="text-sm text-gray-600">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedFile(null)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={handleUpload}
+                disabled={!selectedFile || uploading}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transform hover:scale-[1.02] transition-all shadow-lg hover:shadow-xl disabled:transform-none"
+              >
+                {uploading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                    Uploading...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload Resume
+                  </span>
+                )}
+              </button>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <span>{error}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
