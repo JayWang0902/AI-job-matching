@@ -1,117 +1,189 @@
-# 文档索引
+# 文档目录
 
-## 📚 完整文档列表
+欢迎查阅 AI Job Matching 项目文档！
 
-本目录包含 AI Job Matching 项目的所有运维和部署文档。
+## 📖 文档列表
 
----
-
-## 🚀 部署相关
-
-### [GitHub Secrets 配置指南](./GITHUB_SECRETS_SETUP.md) ⭐ **开始这里**
-**适用场景**: 首次配置 GitHub Actions CI/CD  
-**内容**:
-- 需要配置的 5 个 GitHub Secrets (EC2_SSH_KEY, EC2_HOST, EC2_USER, EC2_PROJECT_DIR, HEALTH_URL)
-- 详细的获取和配置步骤
-- Web UI 和 CLI 两种配置方式
-- 常见问题和解决方案
-
-### [EC2 首次部署指南](./EC2_FIRST_DEPLOYMENT.md)
-**适用场景**: 第一次在 EC2 上部署项目  
-**内容**:
-- EC2 环境准备 (Docker, Docker Compose, Git)
-- 安全组配置
-- 环境变量 (.env) 设置
-- 首次部署完整检查清单
-- 部署后验证步骤
-
-### [安全组配置说明](./SECURITY_GROUP_EXPLAINED.md)
-**适用场景**: 配置 AWS EC2 安全组  
-**内容**:
-- 详细的端口配置 (22, 8000, 3000, 6379)
-- 每个端口的作用和访问权限
-- 安全最佳实践
-- 常见错误和解决方案
-
----
-
-## 🗄️ 数据库相关
-
-### [Alembic 迁移指南](./ALEMBIC_MIGRATION_GUIDE.md)
-**适用场景**: 修改数据库 schema 后需要迁移  
-**内容**:
-- 什么是 Alembic 数据库迁移
-- 如何生成和应用迁移
-- 本地和 EC2 的迁移步骤
-- 常见问题 (表已存在、迁移冲突等)
-- 回滚操作
-
-### [首次数据库迁移设置](./FIRST_TIME_MIGRATION_SETUP.md)
-**适用场景**: 全新项目首次创建数据库表  
-**内容**:
-- 为什么需要 Alembic
-- 首次迁移的特殊步骤
-- 从 init_db.py 迁移到 Alembic
-- 详细的命令和解释
-
----
-
-## 📖 快速参考
-
-### FAQ (常见问题)
-*即将推出*
-
-**将包含**:
-- 为什么安全组要开放这些端口?
-- Alembic 和 init_db.py 的区别?
-- 如何调试部署失败?
-- Redis 连接问题?
-- S3 配置问题?
-
----
-
-## 📁 文档组织
-
-```
-docs/
-├── README.md                          # 本文件 - 文档索引
-├── GITHUB_SECRETS_SETUP.md            # GitHub Secrets 配置 (7.4KB)
-├── EC2_FIRST_DEPLOYMENT.md            # EC2 部署指南 (待测量)
-├── SECURITY_GROUP_EXPLAINED.md        # 安全组说明 (7.5KB)
-├── ALEMBIC_MIGRATION_GUIDE.md         # 数据库迁移 (11.6KB)
-└── FIRST_TIME_MIGRATION_SETUP.md      # 首次迁移 (11.6KB)
-```
-
----
+| 文档 | 说明 | 何时使用 |
+|------|------|---------|
+| **[DEVELOPMENT.md](./DEVELOPMENT.md)** | 本地开发指南 | 开发新功能、本地调试、热重载开发 |
+| **[DEPLOYMENT.md](./DEPLOYMENT.md)** | EC2 部署指南 | 首次部署、更新部署、CI/CD 配置 |
+| **[DATABASE.md](./DATABASE.md)** | 数据库迁移指南 | 修改数据库结构、运行迁移、回滚迁移 |
+| **[MAINTENANCE.md](./MAINTENANCE.md)** | 运维维护指南 | 日常维护、故障排查、Docker 清理 |
+| **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** | 快速命令参考 | 快速查找常用命令 |
 
 ## 🎯 快速导航
 
 ### 我想...
-- **首次部署到 EC2** → [GitHub Secrets](./GITHUB_SECRETS_SETUP.md) → [EC2 部署](./EC2_FIRST_DEPLOYMENT.md)
-- **修改数据库结构** → [Alembic 指南](./ALEMBIC_MIGRATION_GUIDE.md)
-- **解决安全组问题** → [安全组说明](./SECURITY_GROUP_EXPLAINED.md)
-- **全新项目创建表** → [首次迁移](./FIRST_TIME_MIGRATION_SETUP.md)
-- **配置 CI/CD** → [GitHub Secrets](./GITHUB_SECRETS_SETUP.md)
+
+- **在本地开发新功能** → [DEVELOPMENT.md](./DEVELOPMENT.md)
+- **第一次部署到 EC2** → [DEPLOYMENT.md](./DEPLOYMENT.md)
+- **修改数据库表结构** → [DATABASE.md](./DATABASE.md)
+- **解决线上问题** → [MAINTENANCE.md](./MAINTENANCE.md)
+- **查找某个命令** → [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
+
+## 📋 快速开始流程
+
+### 本地开发
+
+```bash
+# 1. 启动服务
+docker compose up -d
+
+# 2. 查看日志
+docker compose logs -f backend
+
+# 3. 运行迁移
+docker compose exec backend alembic upgrade head
+
+# 4. 测试
+curl http://localhost:8000/health
+```
+
+详见: [DEVELOPMENT.md](./DEVELOPMENT.md)
+
+### 部署到生产
+
+```bash
+# 1. 在 EC2 上拉取代码
+git pull origin main
+
+# 2. 重新构建并启动
+docker compose build
+docker compose up -d
+
+# 3. 运行迁移
+docker compose exec backend alembic upgrade head
+
+# 4. 验证
+curl http://localhost:8000/health
+```
+
+详见: [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+### 数据库迁移
+
+```bash
+# 1. 修改模型
+vim app/models/user.py
+
+# 2. 生成迁移
+docker compose exec backend alembic revision --autogenerate -m "add phone field"
+
+# 3. 应用迁移
+docker compose exec backend alembic upgrade head
+```
+
+详见: [DATABASE.md](./DATABASE.md)
+
+## 🔧 常见任务
+
+<details>
+<summary><b>查看日志</b></summary>
+
+```bash
+# 查看所有日志
+docker compose logs
+
+# 查看特定服务
+docker compose logs backend
+
+# 实时跟踪
+docker compose logs -f backend
+
+# 最近 100 行
+docker compose logs --tail=100 backend
+```
+
+</details>
+
+<details>
+<summary><b>重启服务</b></summary>
+
+```bash
+# 重启所有服务
+docker compose restart
+
+# 重启特定服务
+docker compose restart backend
+
+# 完全重启（停止并重新启动）
+docker compose down
+docker compose up -d
+```
+
+</details>
+
+<details>
+<summary><b>清理 Docker</b></summary>
+
+```bash
+# 安全清理
+docker image prune -a
+docker container prune
+docker volume prune
+
+# 一键清理（危险！）
+docker system prune -a --volumes
+```
+
+</details>
+
+<details>
+<summary><b>数据库操作</b></summary>
+
+```bash
+# 查看迁移状态
+docker compose exec backend alembic current
+
+# 应用迁移
+docker compose exec backend alembic upgrade head
+
+# 回滚迁移
+docker compose exec backend alembic downgrade -1
+```
+
+</details>
+
+## 🆘 紧急问题
+
+### API 无响应
+```bash
+docker compose restart backend
+docker compose logs --tail=100 backend
+```
+
+### 磁盘已满
+```bash
+docker system prune -a --volumes -f
+df -h
+```
+
+### 数据库连接失败
+```bash
+docker compose exec backend python -c "from app.core.database import engine; engine.connect()"
+```
+
+### Celery 任务堆积
+```bash
+docker compose restart celery
+docker compose exec redis redis-cli llen celery
+```
+
+详见: [MAINTENANCE.md](./MAINTENANCE.md)
+
+## 📚 其他资源
+
+- **主 README**: [../README.md](../README.md) - 项目概述和快速开始
+- **Copilot 指南**: [../.github/copilot-instructions.md](../.github/copilot-instructions.md) - AI 开发助手使用指南
+
+## 💡 文档阅读建议
+
+1. **首次使用**: 按顺序阅读 DEVELOPMENT → DEPLOYMENT → DATABASE
+2. **日常开发**: 参考 DEVELOPMENT + QUICK_REFERENCE
+3. **部署上线**: 参考 DEPLOYMENT + DATABASE + MAINTENANCE
+4. **故障处理**: 直接查看 MAINTENANCE 的相关章节
 
 ---
 
-## 🔄 文档更新日志
-
-- **2024-01-XX**: 新增 GitHub Secrets 配置指南
-- **2024-01-XX**: 新增 EC2 首次部署指南
-- **2024-01-XX**: 新增安全组配置说明
-- **2024-01-XX**: 新增 Alembic 迁移指南
-- **2024-01-XX**: 新增首次数据库迁移设置
-
----
-
-## 📞 需要帮助?
-
-- 查看各文档中的"常见问题"部分
-- 检查 GitHub Actions 的日志输出
-- 查看 EC2 上的 Docker 日志: `docker compose logs`
-- 联系项目维护者
-
----
-
-**提示**: 所有文档都包含详细的命令示例和故障排查步骤，建议完整阅读相关章节。
+**提示**: 所有文档都包含详细的命令示例和故障排查步骤。如果遇到问题，先查看相关文档的"常见问题"或"故障排查"部分。
